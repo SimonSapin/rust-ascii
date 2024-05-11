@@ -80,3 +80,56 @@ pub use ascii_str::{Chars, CharsMut, CharsRef};
 #[cfg(feature = "alloc")]
 pub use ascii_string::{AsciiString, FromAsciiError, IntoAsciiString};
 pub use free_functions::{caret_decode, caret_encode};
+
+/// Create a compile-time checked [`AsciiChar`] from a `const char`.
+/// ```
+/// ascii::char!('a');
+/// ```
+/// ```compile_fail
+/// ascii::char!('\u{FFFD}');
+/// ```
+#[macro_export]
+macro_rules! char {
+    ($expr:expr) => {{
+        const MUST_BE_CONST_EVALUABLE: $crate::AsciiChar = { $crate::AsciiChar::new($expr) };
+        MUST_BE_CONST_EVALUABLE
+    }};
+}
+
+/// Create a compile-time checked [`AsciiStr`] from a `const str`.
+///
+/// ```
+/// ascii::str!("a");
+/// ```
+/// ```compile_fail
+/// ascii::str!("\u{FFFD}");
+/// ```
+#[macro_export]
+macro_rules! str {
+    ($expr:expr) => {{
+        const MUST_BE_CONST_EVALUABLE: &$crate::AsciiStr =
+            match $crate::AsciiStr::from_ascii_str($expr) {
+                Ok(it) => it,
+                Err(_) => panic!("string literal contained non-ascii bytes"),
+            };
+        MUST_BE_CONST_EVALUABLE
+    }};
+}
+/// Create a compile-time checked [`AsciiStr`] from a `const &[u8]`.
+/// ```
+/// ascii::bytes!(b"a");
+/// ```
+/// ```compile_fail
+/// ascii::bytes!(b"\xFF");
+/// ```
+#[macro_export]
+macro_rules! bytes {
+    ($expr:expr) => {{
+        const MUST_BE_CONST_EVALUABLE: &$crate::AsciiStr =
+            match $crate::AsciiStr::from_ascii_bytes($expr) {
+                Ok(it) => it,
+                Err(_) => panic!("string literal contained non-ascii bytes"),
+            };
+        MUST_BE_CONST_EVALUABLE
+    }};
+}
