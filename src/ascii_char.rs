@@ -794,8 +794,8 @@ macro_rules! impl_into_partial_eq_ord {
     ($wider:ty, $to_wider:expr) => {
         impl From<AsciiChar> for $wider {
             #[inline]
-            fn from(a: AsciiChar) -> $wider {
-                $to_wider(a)
+            fn from(value: AsciiChar) -> $wider {
+                $to_wider(value)
             }
         }
         impl PartialEq<$wider> for AsciiChar {
