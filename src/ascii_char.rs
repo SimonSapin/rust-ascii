@@ -16,7 +16,10 @@ pub enum AsciiChar {
     #[allow(clippy::doc_markdown)]
     /// [Start of TeXt](http://en.wikipedia.org/wiki/Start_of_Text)
     #[doc(hidden)]
-    #[deprecated(since="1.2.0", note="Replaced with AsciiChar::STX which is the correct name for this variant.")]
+    #[deprecated(
+        since = "1.2.0",
+        note = "Replaced with AsciiChar::STX which is the correct name for this variant."
+    )]
     SOX = 2,
     /// [End of TeXt](http://en.wikipedia.org/wiki/End-of-Text_character)
     ETX = 3,
