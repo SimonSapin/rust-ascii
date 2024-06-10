@@ -10,6 +10,8 @@ use core::slice::{self, Iter, IterMut, SliceIndex};
 use std::error::Error;
 #[cfg(feature = "std")]
 use std::ffi::CStr;
+#[cfg(feature = "std")]
+use std::ffi::OsStr;
 
 use ascii_char::AsciiChar;
 #[cfg(feature = "alloc")]
@@ -407,6 +409,8 @@ macro_rules! impl_partial_eq {
     };
 }
 
+#[cfg(feature = "std")]
+impl_partial_eq! {OsStr}
 impl_partial_eq! {str}
 impl_partial_eq! {[u8]}
 impl_partial_eq! {[AsciiChar]}
@@ -431,6 +435,13 @@ impl AsRef<str> for AsciiStr {
     #[inline]
     fn as_ref(&self) -> &str {
         self.as_str()
+    }
+}
+#[cfg(feature = "std")]
+impl AsRef<OsStr> for AsciiStr {
+    #[inline]
+    fn as_ref(&self) -> &OsStr {
+        self.as_str().as_ref()
     }
 }
 impl AsRef<[AsciiChar]> for AsciiStr {
@@ -524,6 +535,13 @@ impl<'a> From<&'a AsciiStr> for &'a str {
         astr.as_str()
     }
 }
+#[cfg(feature = "std")]
+impl<'a> From<&'a AsciiStr> for &'a OsStr {
+    #[inline]
+    fn from(astr: &AsciiStr) -> &OsStr {
+        astr.as_ref()
+    }
+}
 macro_rules! widen_box {
     ($wider: ty) => {
         #[cfg(feature = "alloc")]
@@ -539,6 +557,8 @@ macro_rules! widen_box {
 widen_box! {[AsciiChar]}
 widen_box! {[u8]}
 widen_box! {str}
+#[cfg(feature = "std")]
+widen_box! {OsStr}
 
 // allows &AsciiChar to be used by generic AsciiString Extend and FromIterator
 impl AsRef<AsciiStr> for AsciiChar {
@@ -1291,6 +1311,25 @@ impl AsAsciiStr for CStr {
     }
 }
 
+#[cfg(feature = "std")]
+impl AsAsciiStr for OsStr {
+    type Inner = u8;
+    fn slice_ascii<R>(&self, range: R) -> Result<&AsciiStr, AsAsciiStrError>
+    where
+        R: SliceIndex<[u8], Output = [u8]>,
+    {
+        self.as_encoded_bytes().slice_ascii(range)
+    }
+    fn as_ascii_str(&self) -> Result<&AsciiStr, AsAsciiStrError> {
+        self.as_encoded_bytes().as_ascii_str()
+    }
+    #[inline]
+    unsafe fn as_ascii_str_unchecked(&self) -> &AsciiStr {
+        // SAFETY: Caller guarantees `self` does not contain non-ascii characters
+        unsafe { self.as_encoded_bytes().as_ascii_str_unchecked() }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{AsAsciiStr, AsAsciiStrError, AsMutAsciiStr, AsciiStr};
@@ -1365,6 +1404,19 @@ mod tests {
         let ascii_str_mut_2: &mut AsciiStr = arr_mut_2.as_mut().into();
         assert_eq!(generic_mut(&mut ascii_str_mut), Ok(&mut *ascii_str_mut_2));
         assert_eq!(generic_mut(ascii_str_mut), Ok(&mut *ascii_str_mut_2));
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn osstr_as_ascii_str() {
+        use std::ffi::OsStr;
+        fn generic<C: AsAsciiStr + ?Sized>(c: &C) -> Result<&AsciiStr, AsAsciiStrError> {
+            c.as_ascii_str()
+        }
+        let arr = [AsciiChar::A];
+        let ascii_str: &AsciiStr = arr.as_ref().into();
+        let os_str = OsStr::new(ascii_str);
+        assert_eq!(generic(&*os_str), Ok(ascii_str));
     }
 
     #[test]

@@ -15,6 +15,8 @@ use core::str::FromStr;
 use std::error::Error;
 #[cfg(feature = "std")]
 use std::ffi::{CStr, CString};
+#[cfg(feature = "std")]
+use std::ffi::OsStr;
 
 use ascii_char::AsciiChar;
 use ascii_str::{AsAsciiStr, AsAsciiStrError, AsciiStr};
@@ -451,6 +453,22 @@ impl PartialEq<AsciiString> for str {
     }
 }
 
+#[cfg(feature = "std")]
+impl PartialEq<OsStr> for AsciiString {
+    #[inline]
+    fn eq(&self, other: &OsStr) -> bool {
+        **self == *other
+    }
+}
+
+#[cfg(feature = "std")]
+impl PartialEq<AsciiString> for OsStr {
+    #[inline]
+    fn eq(&self, other: &AsciiString) -> bool {
+        **other == *self
+    }
+}
+
 macro_rules! impl_eq {
     ($lhs:ty, $rhs:ty) => {
         impl PartialEq<$rhs> for $lhs {
@@ -470,6 +488,10 @@ impl_eq! { &AsciiStr, AsciiString }
 impl_eq! { AsciiString, &AsciiStr }
 impl_eq! { &str, AsciiString }
 impl_eq! { AsciiString, &str }
+#[cfg(feature = "std")]
+impl_eq! { &OsStr, AsciiString }
+#[cfg(feature = "std")]
+impl_eq! { AsciiString, &OsStr }
 
 impl Borrow<AsciiStr> for AsciiString {
     #[inline]
@@ -616,6 +638,14 @@ impl AsRef<str> for AsciiString {
     #[inline]
     fn as_ref(&self) -> &str {
         self.as_str()
+    }
+}
+
+#[cfg(feature = "std")]
+impl AsRef<OsStr> for AsciiString {
+    #[inline]
+    fn as_ref(&self) -> &OsStr {
+        self.as_str().as_ref()
     }
 }
 
