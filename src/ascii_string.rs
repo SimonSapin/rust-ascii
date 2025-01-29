@@ -579,8 +579,8 @@ impl<'a> From<Cow<'a, AsciiStr>> for AsciiString {
     }
 }
 
-impl From<AsciiString> for Cow<'static, AsciiStr> {
-    fn from(string: AsciiString) -> Cow<'static, AsciiStr> {
+impl<'a> From<AsciiString> for Cow<'a, AsciiStr> {
+    fn from(string: AsciiString) -> Cow<'a, AsciiStr> {
         Cow::Owned(string)
     }
 }
